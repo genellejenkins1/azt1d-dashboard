@@ -1,0 +1,99 @@
+---
+title: "AZT1D Glycemic Control — Reproducible Analysis"
+author: "Genelle Jenkins"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+  pdf:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(tidyverse)
+library(lubridate)
+
+# Reads the synthetic sample data shipped with the repo (same schema as real AZT1D).
+data_dir <- "../sample_data/CGM Records"
+files <- list.files(data_dir, pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
+
+cgm <- files |>
+  set_names(basename(dirname(files))) |>
+  map_dfr(read_csv, .id = "subject", show_col_types = FALSE) |>
+  mutate(EventDateTime = ymd_hms(EventDateTime))
+
+# ADA clinical thresholds
+hypo <- 70; target_lo <- 70; target_hi <- 180; hyper <- 180
+```
+
+## Cohort overview
+
+```{r overview}
+cgm |>
+  group_by(subject) |>
+  summarise(
+    n_readings   = n(),
+    mean_glucose = mean(CGM, na.rm = TRUE),
+    cv_pct       = sd(CGM, na.rm = TRUE) / mean(CGM, na.rm = TRUE) * 100,
+    tir_pct      = mean(CGM >= target_lo & CGM <= target_hi) * 100,
+    tbr_pct      = mean(CGM < hypo) * 100,
+    .groups = "drop"
+  ) |>
+  arrange(desc(tir_pct)) |>
+  knitr::kable(digits = 1, caption = "Per-subject glycemic summary")
+```
+
+## Time-in-range by subject
+
+```{r tir-plot}
+cgm |>
+  mutate(zone = case_when(
+    CGM < hypo      ~ "Below range (<70)",
+    CGM > hyper     ~ "Above range (>180)",
+    TRUE            ~ "In range (70-180)"
+  )) |>
+  count(subject, zone) |>
+  group_by(subject) |>
+  mutate(pct = n / sum(n) * 100) |>
+  ggplot(aes(subject, pct, fill = zone)) +
+  geom_col() +
+  scale_fill_manual(values = c("In range (70-180)" = "#34a853",
+                               "Below range (<70)" = "#ea4335",
+                               "Above range (>180)" = "#fbbc04")) +
+  labs(title = "Time-in-range distribution by subject",
+       x = NULL, y = "% of readings", fill = NULL) +
+  coord_flip() + theme_minimal()
+```
+
+## Ambulatory Glucose Profile (median + IQR by time of day)
+
+```{r agp}
+cgm |>
+  mutate(tod = hour(EventDateTime) + minute(EventDateTime) / 60) |>
+  group_by(tod_bin = round(tod * 2) / 2) |>
+  summarise(
+    med = median(CGM), lo = quantile(CGM, .25), hi = quantile(CGM, .75),
+    .groups = "drop"
+  ) |>
+  ggplot(aes(tod_bin)) +
+  annotate("rect", xmin = -Inf, xmax = Inf, ymin = target_lo, ymax = target_hi,
+           alpha = .08, fill = "#34a853") +
+  geom_ribbon(aes(ymin = lo, ymax = hi), alpha = .25, fill = "#4285f4") +
+  geom_line(aes(y = med), color = "#1a73e8", linewidth = 1) +
+  labs(title = "Ambulatory Glucose Profile (cohort)",
+       x = "Hour of day", y = "CGM (mg/dL)") +
+  theme_minimal()
+```
+
+## Takeaways
+
+- Time-in-range and hypoglycemia exposure vary substantially across subjects.
+- The AGP highlights time-of-day patterns (e.g., overnight vs. post-meal excursions).
+- Reproducible in R/Tidyverse; rendered to HTML + PDF via Quarto (CI workflow included).
+
+> Synthetic demo data. Re-point `data_dir` to DVC-pulled real data for true results.

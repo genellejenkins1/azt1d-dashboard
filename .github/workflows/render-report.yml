@@ -1,0 +1,20 @@
+name: Render R report
+on:
+  push:
+    paths: ["report/**", "sample_data/**", ".github/workflows/render-report.yml"]
+  workflow_dispatch:
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+      - uses: quarto-dev/quarto-actions/setup@v2
+      - name: Install R packages
+        run: Rscript -e 'install.packages(c("tidyverse","lubridate","knitr","rmarkdown"), repos="https://cloud.r-project.org")'
+      - name: Render
+        run: quarto render report/cgm_analysis.qmd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cgm-report
+          path: report/cgm_analysis.html

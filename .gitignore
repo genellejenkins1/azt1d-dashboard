@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.venv*/
+.DS_Store
+# Real patient data (DVC-tracked) is never committed; synthetic demo lives in sample_data/
+/data/raw/
+*.pt
+# MLflow experiment tracking (local runs only — not committed)
+mlruns/
+mlartifacts/
+# Private / dev notes — never publish
+RESUME_AND_CONTRIBUTIONS.md
+README_FIXES.md
+
+# RAG index cache (rebuilt locally)
+ml/outputs/rag_index/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/

@@ -1,0 +1,16 @@
+numpy
+pandas
+scikit-learn
+matplotlib
+streamlit
+plotly
+dvc
+shap
+xgboost
+torch
+mlflow
+# RAG pipeline (clinical_rag.py) — install for full vector search:
+# pip install sentence-transformers faiss-cpu
+# optional LLM providers (llm_summary.py, clinical_rag.py):
+# openai
+# anthropic

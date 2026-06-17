@@ -1,0 +1,139 @@
+{
+  "task": "Predict CGM < 70 mg/dL within next 30 minutes",
+  "n_train_rows": 9660,
+  "n_test_rows": 6354,
+  "train_subjects": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "test_subjects": [
+    5,
+    6
+  ],
+  "positive_rate_test": 0.1042,
+  "best_model": "logistic_regression",
+  "models": {
+    "logistic_regression": {
+      "roc_auc": 0.9849,
+      "pr_auc": 0.8953,
+      "confusion_matrix": [
+        [
+          5259,
+          433
+        ],
+        [
+          25,
+          637
+        ]
+      ],
+      "report": {
+        "0": {
+          "precision": 0.9952687358062074,
+          "recall": 0.923928320449754,
+          "f1-score": 0.9582725947521866,
+          "support": 5692.0
+        },
+        "1": {
+          "precision": 0.5953271028037384,
+          "recall": 0.9622356495468278,
+          "f1-score": 0.7355658198614319,
+          "support": 662.0
+        },
+        "accuracy": 0.9279194208372679,
+        "macro avg": {
+          "precision": 0.795297919304973,
+          "recall": 0.943081984998291,
+          "f1-score": 0.8469192073068093,
+          "support": 6354.0
+        },
+        "weighted avg": {
+          "precision": 0.9536002811244897,
+          "recall": 0.9279194208372679,
+          "f1-score": 0.9350695911359324,
+          "support": 6354.0
+        }
+      }
+    },
+    "random_forest": {
+      "roc_auc": 0.9815,
+      "pr_auc": 0.8814,
+      "confusion_matrix": [
+        [
+          5460,
+          232
+        ],
+        [
+          63,
+          599
+        ]
+      ],
+      "report": {
+        "0": {
+          "precision": 0.9885931558935361,
+          "recall": 0.9592410400562192,
+          "f1-score": 0.9736959429335711,
+          "support": 5692.0
+        },
+        "1": {
+          "precision": 0.7208182912154031,
+          "recall": 0.904833836858006,
+          "f1-score": 0.8024112525117214,
+          "support": 662.0
+        },
+        "accuracy": 0.9535725527226944,
+        "macro avg": {
+          "precision": 0.8547057235544696,
+          "recall": 0.9320374384571126,
+          "f1-score": 0.8880535977226462,
+          "support": 6354.0
+        },
+        "weighted avg": {
+          "precision": 0.9606946729824685,
+          "recall": 0.9535725527226944,
+          "f1-score": 0.9558504180580181,
+          "support": 6354.0
+        }
+      }
+    }
+  },
+  "top_features": [
+    {
+      "feature": "recent_carbs_30m",
+      "importance": 0.2347
+    },
+    {
+      "feature": "recent_bolus_30m",
+      "importance": 0.2087
+    },
+    {
+      "feature": "cgm",
+      "importance": 0.1852
+    },
+    {
+      "feature": "cgm_min_30m",
+      "importance": 0.1076
+    },
+    {
+      "feature": "cgm_std_30m",
+      "importance": 0.0947
+    },
+    {
+      "feature": "cgm_mean_30m",
+      "importance": 0.0862
+    },
+    {
+      "feature": "cgm_slope_30m",
+      "importance": 0.067
+    },
+    {
+      "feature": "cgm_last_delta",
+      "importance": 0.0093
+    },
+    {
+      "feature": "basal",
+      "importance": 0.0067
+    }
+  ]
+}

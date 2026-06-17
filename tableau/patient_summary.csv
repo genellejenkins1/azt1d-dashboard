@@ -1,0 +1,7 @@
+subject_id,n_readings,mean_glucose,std_glucose,cv_pct,time_in_range_pct,time_below_70_pct,time_above_180_pct,time_below_54_pct,time_above_250_pct,n_hypo_events,min_glucose,max_glucose,risk_tier,meets_tir_goal,meets_hypo_goal
+1,2880,110.2,37.1,33.7,81.4,15.9,2.8,10.1,0.0,41,40.0,267.0,High,Yes,No
+2,2880,112.4,41.7,37.1,77.6,19.0,3.4,13.2,0.0,43,40.0,277.0,High,Yes,No
+3,2880,108.9,39.7,36.5,78.2,18.0,3.8,11.4,0.0,67,40.0,240.0,High,Yes,No
+4,2880,115.1,35.2,30.5,85.8,10.8,3.4,6.8,0.1,32,40.0,270.0,High,Yes,No
+5,4032,107.5,41.0,38.2,75.0,21.8,3.2,15.0,0.0,73,40.0,254.0,High,Yes,No
+6,4032,109.3,41.8,38.2,76.2,20.4,3.4,13.8,0.1,63,40.0,286.0,High,Yes,No

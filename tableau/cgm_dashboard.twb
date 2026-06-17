@@ -1,0 +1,275 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- AZT1D CGM Clinical Dashboard — Tableau Public workbook
+     Data: run python tableau/export_for_tableau.py first to generate CSVs.
+     Open this file in Tableau Public (free) or Tableau Desktop.
+
+     Worksheets:
+       1. Patient Risk Overview   — bar chart: TIR% per patient, coloured by risk tier
+       2. Cohort TIR Distribution — histogram of time-in-range across the cohort
+       3. Glucose Zone Breakdown  — stacked bar: % time in each glucose zone per patient
+       4. Hypo Events by Hour     — heatmap: hypoglycemic event frequency by hour of day
+       5. Clinical KPI Tiles      — text table: cohort-level ADA goal attainment
+
+     Dashboard: CGM Clinical Overview
+       Combines all 5 worksheets with a filter on Risk Tier.
+-->
+<workbook source-build='2023.3' source-platform='mac' version='18.1'
+          xmlns:user='http://www.tableausoftware.com/xml/user'>
+
+  <!-- =========================================================
+       DATASOURCE: patient_summary.csv
+       ========================================================= -->
+  <datasources>
+    <datasource caption='Patient Summary' inline='true' name='patient_summary'
+                version='18.1'>
+      <connection class='textscan' filename='patient_summary.csv'
+                  separator=',' character-set='UTF-8'
+                  locale='en_US' start-of-week='monday'>
+        <relation name='patient_summary.csv' table='[patient_summary.csv]'
+                  type='table' />
+      </connection>
+      <column datatype='integer' name='[subject_id]' role='dimension' type='nominal' />
+      <column datatype='real' name='[time_in_range_pct]' role='measure' type='quantitative' />
+      <column datatype='real' name='[time_below_70_pct]' role='measure' type='quantitative' />
+      <column datatype='real' name='[time_above_180_pct]' role='measure' type='quantitative' />
+      <column datatype='real' name='[time_below_54_pct]' role='measure' type='quantitative' />
+      <column datatype='real' name='[cv_pct]' role='measure' type='quantitative' />
+      <column datatype='real' name='[mean_glucose]' role='measure' type='quantitative' />
+      <column datatype='integer' name='[n_hypo_events]' role='measure' type='quantitative' />
+      <column datatype='string' name='[risk_tier]' role='dimension' type='nominal' />
+      <column datatype='string' name='[meets_tir_goal]' role='dimension' type='nominal' />
+      <column datatype='string' name='[meets_hypo_goal]' role='dimension' type='nominal' />
+
+      <!-- Calculated: ADA TIR goal reference line at 70% -->
+      <column caption='ADA TIR Goal (70%)' datatype='real' formula='70'
+              name='[Calculation_ADA_TIR_Goal]' role='measure' type='quantitative' />
+      <!-- Calculated: ADA hypo safety threshold at 4% -->
+      <column caption='ADA Hypo Limit (4%)' datatype='real' formula='4'
+              name='[Calculation_ADA_Hypo_Limit]' role='measure' type='quantitative' />
+    </datasource>
+
+    <!-- =========================================================
+         DATASOURCE: glucose_timeseries.csv
+         ========================================================= -->
+    <datasource caption='Glucose Timeseries' inline='true' name='glucose_timeseries'
+                version='18.1'>
+      <connection class='textscan' filename='glucose_timeseries.csv'
+                  separator=',' character-set='UTF-8' locale='en_US'>
+        <relation name='glucose_timeseries.csv' table='[glucose_timeseries.csv]'
+                  type='table' />
+      </connection>
+      <column datatype='integer' name='[subject_id]' role='dimension' type='nominal' />
+      <column datatype='datetime' name='[datetime]' role='dimension' type='ordinal' />
+      <column datatype='real' name='[glucose]' role='measure' type='quantitative' />
+      <column datatype='string' name='[glucose_zone]' role='dimension' type='nominal' />
+      <column datatype='integer' name='[hour_of_day]' role='dimension' type='ordinal' />
+      <column datatype='string' name='[day_of_week]' role='dimension' type='nominal' />
+    </datasource>
+
+    <!-- =========================================================
+         DATASOURCE: hypo_events.csv
+         ========================================================= -->
+    <datasource caption='Hypoglycemic Events' inline='true' name='hypo_events'
+                version='18.1'>
+      <connection class='textscan' filename='hypo_events.csv'
+                  separator=',' character-set='UTF-8' locale='en_US'>
+        <relation name='hypo_events.csv' table='[hypo_events.csv]' type='table' />
+      </connection>
+      <column datatype='integer' name='[subject_id]' role='dimension' type='nominal' />
+      <column datatype='datetime' name='[event_start]' role='dimension' type='ordinal' />
+      <column datatype='integer' name='[duration_min]' role='measure' type='quantitative' />
+      <column datatype='real' name='[nadir_glucose]' role='measure' type='quantitative' />
+      <column datatype='string' name='[severe]' role='dimension' type='nominal' />
+      <column datatype='integer' name='[hour_of_day]' role='dimension' type='ordinal' />
+    </datasource>
+  </datasources>
+
+  <!-- =========================================================
+       WORKSHEETS
+       ========================================================= -->
+  <worksheets>
+
+    <!-- Sheet 1: Patient Risk Overview (bar chart) -->
+    <worksheet name='Patient Risk Overview'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Patient Summary' name='patient_summary' />
+          </datasources>
+          <datasource-dependencies datasource='patient_summary'>
+            <column name='[subject_id]' />
+            <column name='[time_in_range_pct]' />
+            <column name='[risk_tier]' />
+          </datasource-dependencies>
+          <shelves>
+            <shelf display-name='Columns' name='columns'>
+              <field>[subject_id]</field>
+            </shelf>
+            <shelf display-name='Rows' name='rows'>
+              <field>SUM([time_in_range_pct])</field>
+            </shelf>
+            <shelf display-name='Color' name='color'>
+              <field>[risk_tier]</field>
+            </shelf>
+          </shelves>
+          <panes>
+            <pane>
+              <mark class='Bar' />
+              <encodings>
+                <color field='[risk_tier]' palette='ColorBlind10' />
+                <text field='SUM([time_in_range_pct])' />
+              </encodings>
+            </pane>
+          </panes>
+        </view>
+        <style>
+          <style-rule element='mark'>
+            <encoding attr='size' value='12' />
+          </style-rule>
+        </style>
+      </table>
+    </worksheet>
+
+    <!-- Sheet 2: Glucose Zone Breakdown (stacked bar) -->
+    <worksheet name='Glucose Zone Breakdown'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Glucose Timeseries' name='glucose_timeseries' />
+          </datasources>
+          <datasource-dependencies datasource='glucose_timeseries'>
+            <column name='[subject_id]' />
+            <column name='[glucose_zone]' />
+            <column name='[glucose]' />
+          </datasource-dependencies>
+          <shelves>
+            <shelf display-name='Columns' name='columns'>
+              <field>[subject_id]</field>
+            </shelf>
+            <shelf display-name='Rows' name='rows'>
+              <field>CNT([glucose])</field>
+            </shelf>
+            <shelf display-name='Color' name='color'>
+              <field>[glucose_zone]</field>
+            </shelf>
+          </shelves>
+          <panes>
+            <pane>
+              <mark class='Bar' />
+              <encodings>
+                <color field='[glucose_zone]' palette='ColorBlind10' />
+              </encodings>
+            </pane>
+          </panes>
+        </view>
+      </table>
+    </worksheet>
+
+    <!-- Sheet 3: Hypo Events by Hour of Day (bar) -->
+    <worksheet name='Hypo Events by Hour'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Hypoglycemic Events' name='hypo_events' />
+          </datasources>
+          <datasource-dependencies datasource='hypo_events'>
+            <column name='[hour_of_day]' />
+            <column name='[duration_min]' />
+            <column name='[severe]' />
+          </datasource-dependencies>
+          <shelves>
+            <shelf display-name='Columns' name='columns'>
+              <field>[hour_of_day]</field>
+            </shelf>
+            <shelf display-name='Rows' name='rows'>
+              <field>CNT([duration_min])</field>
+            </shelf>
+            <shelf display-name='Color' name='color'>
+              <field>[severe]</field>
+            </shelf>
+          </shelves>
+          <panes>
+            <pane>
+              <mark class='Bar' />
+              <encodings>
+                <color field='[severe]' palette='ColorBlind10' />
+              </encodings>
+            </pane>
+          </panes>
+        </view>
+      </table>
+    </worksheet>
+
+    <!-- Sheet 4: CV vs TIR scatter (risk quadrant) -->
+    <worksheet name='Variability vs Time-in-Range'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Patient Summary' name='patient_summary' />
+          </datasources>
+          <datasource-dependencies datasource='patient_summary'>
+            <column name='[cv_pct]' />
+            <column name='[time_in_range_pct]' />
+            <column name='[risk_tier]' />
+            <column name='[subject_id]' />
+          </datasource-dependencies>
+          <shelves>
+            <shelf display-name='Columns' name='columns'>
+              <field>AVG([cv_pct])</field>
+            </shelf>
+            <shelf display-name='Rows' name='rows'>
+              <field>AVG([time_in_range_pct])</field>
+            </shelf>
+            <shelf display-name='Color' name='color'>
+              <field>[risk_tier]</field>
+            </shelf>
+            <shelf display-name='Label' name='label'>
+              <field>[subject_id]</field>
+            </shelf>
+          </shelves>
+          <panes>
+            <pane>
+              <mark class='Circle' />
+              <encodings>
+                <color field='[risk_tier]' palette='ColorBlind10' />
+                <label field='[subject_id]' />
+              </encodings>
+            </pane>
+          </panes>
+        </view>
+      </table>
+    </worksheet>
+
+  </worksheets>
+
+  <!-- =========================================================
+       DASHBOARD: CGM Clinical Overview
+       ========================================================= -->
+  <dashboards>
+    <dashboard name='CGM Clinical Overview'>
+      <style />
+      <size maxheight='1800' maxwidth='1600' minheight='900' minwidth='1200' />
+      <zones>
+        <zone h='50000' id='1' type='layout-basic' w='100000' x='0' y='0'>
+          <zone h='50000' id='2' name='Patient Risk Overview'
+                param='Patient Risk Overview' type='sheet' w='50000' x='0' y='0' />
+          <zone h='50000' id='3' name='Glucose Zone Breakdown'
+                param='Glucose Zone Breakdown' type='sheet' w='50000' x='50000' y='0' />
+        </zone>
+        <zone h='50000' id='4' type='layout-basic' w='100000' x='0' y='50000'>
+          <zone h='50000' id='5' name='Hypo Events by Hour'
+                param='Hypo Events by Hour' type='sheet' w='50000' x='0' y='50000' />
+          <zone h='50000' id='6' name='Variability vs Time-in-Range'
+                param='Variability vs Time-in-Range' type='sheet' w='50000' x='50000' y='50000' />
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout name='Desktop'>
+          <size maxheight='1800' maxwidth='1600' minheight='900' minwidth='1200'
+                sizing-mode='automatic' />
+        </devicelayout>
+      </devicelayouts>
+    </dashboard>
+  </dashboards>
+
+</workbook>
